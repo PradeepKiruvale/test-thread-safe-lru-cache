@@ -14,13 +14,13 @@ fn main() {
     println!("1. Basic Sharded Cache Operations:");
     let sharded_cache = ShardedLruCache::new(100, 4);
     
-    sharded_cache.put(1, "one");
-    sharded_cache.put(2, "two");
-    sharded_cache.put(3, "three");
+    sharded_cache.put(1, "one").unwrap();
+    sharded_cache.put(2, "two").unwrap();
+    sharded_cache.put(3, "three").unwrap();
     
     println!("   Added 3 items to sharded cache");
-    println!("   Get key 1: {:?}", sharded_cache.get(&1));
-    println!("   Get key 2: {:?}", sharded_cache.get(&2));
+    println!("   Get key 1: {:?}", sharded_cache.get(&1).unwrap());
+    println!("   Get key 2: {:?}", sharded_cache.get(&2).unwrap());
     println!("   Shard count: {}", sharded_cache.shard_count());
     
     // 2. Shard statistics
@@ -29,10 +29,10 @@ fn main() {
     
     // Add items
     for i in 0..50 {
-        cache.put(i, format!("value-{i}"));
+        cache.put(i, format!("value-{i}")).unwrap();
     }
     
-    let stats = cache.shard_stats();
+    let stats = cache.shard_stats().unwrap();
     println!("   Distribution across {} shards:", stats.len());
     for stat in stats {
         println!("   Shard {}: {}/{} items ({:.1}% full)",
@@ -61,9 +61,9 @@ fn main() {
             let handle = thread::spawn(move || {
                 for i in 0..OPS_PER_THREAD {
                     let key = thread_id * OPS_PER_THREAD + i;
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                     if i % 3 == 0 {
-                        cache_clone.get(&key);
+                        cache_clone.get(&key).unwrap();
                     }
                 }
             });
@@ -90,9 +90,9 @@ fn main() {
             let handle = thread::spawn(move || {
                 for i in 0..OPS_PER_THREAD {
                     let key = thread_id * OPS_PER_THREAD + i;
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                     if i % 3 == 0 {
-                        cache_clone.get(&key);
+                        cache_clone.get(&key).unwrap();
                     }
                 }
             });
@@ -119,9 +119,9 @@ fn main() {
             let handle = thread::spawn(move || {
                 for i in 0..OPS_PER_THREAD {
                     let key = thread_id * OPS_PER_THREAD + i;
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                     if i % 3 == 0 {
-                        cache_clone.get(&key);
+                        cache_clone.get(&key).unwrap();
                     }
                 }
             });
@@ -158,7 +158,7 @@ fn main() {
         let handle = thread::spawn(move || {
             for i in 0..1000 {
                 let key = (thread_id * 1000 + i) % 200; // Some key overlap
-                cache_clone.put(key, format!("value-{key}"));
+                cache_clone.put(key, format!("value-{key}")).unwrap();
                 counter_clone.fetch_add(1, Ordering::Relaxed);
             }
         });
@@ -171,9 +171,9 @@ fn main() {
     
     println!("   Completed {} concurrent operations", 
         contention_counter.load(Ordering::Relaxed));
-    println!("   Final cache size: {}", contention_cache.len());
+    println!("   Final cache size: {}", contention_cache.len().unwrap());
     
-    let final_stats = contention_cache.shard_stats();
+    let final_stats = contention_cache.shard_stats().unwrap();
     println!("\n   Final shard distribution:");
     for stat in final_stats {
         let bar_length = (stat.utilization * 40.0) as usize;

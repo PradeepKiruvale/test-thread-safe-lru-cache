@@ -8,6 +8,7 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
+use crate::CacheError;
 
 /// Eviction policy trait
 pub trait EvictionPolicy<K>: Send + Sync {
@@ -346,34 +347,36 @@ where
         }
     }
     
-    pub fn get(&self, key: &K) -> Option<V> {
-        let mut inner = self.inner.lock().unwrap();
-        inner.get(key)
+    pub fn get(&self, key: &K) -> Result<Option<V>, CacheError> {
+        let mut inner = self.inner.lock()?;
+        Ok(inner.get(key))
     }
     
-    pub fn put(&self, key: K, value: V) {
-        let mut inner = self.inner.lock().unwrap();
+    pub fn put(&self, key: K, value: V) -> Result<(), CacheError> {
+        let mut inner = self.inner.lock()?;
         inner.put(key, value);
+        Ok(())
     }
     
-    pub fn len(&self) -> usize {
-        let inner = self.inner.lock().unwrap();
-        inner.len()
+    pub fn len(&self) -> Result<usize, CacheError> {
+        let inner = self.inner.lock()?;
+        Ok(inner.len())
     }
     
-    pub fn is_empty(&self) -> bool {
-        let inner = self.inner.lock().unwrap();
-        inner.is_empty()
+    pub fn is_empty(&self) -> Result<bool, CacheError> {
+        let inner = self.inner.lock()?;
+        Ok(inner.is_empty())
     }
     
-    pub fn capacity(&self) -> usize {
-        let inner = self.inner.lock().unwrap();
-        inner.capacity()
+    pub fn capacity(&self) -> Result<usize, CacheError> {
+        let inner = self.inner.lock()?;
+        Ok(inner.capacity())
     }
     
-    pub fn clear(&self) {
-        let mut inner = self.inner.lock().unwrap();
+    pub fn clear(&self) -> Result<(), CacheError> {
+        let mut inner = self.inner.lock()?;
         inner.clear();
+        Ok(())
     }
 }
 

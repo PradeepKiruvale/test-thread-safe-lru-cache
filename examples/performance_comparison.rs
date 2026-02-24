@@ -62,14 +62,14 @@ fn benchmark_standard_lru() -> BenchmarkResult {
                 
                 if rng.gen_bool(0.7) {
                     // 70% reads
-                    if cache_clone.get(&key).is_some() {
+                    if cache_clone.get(&key).unwrap().is_some() {
                         hits_clone.fetch_add(1, Ordering::Relaxed);
                     } else {
                         misses_clone.fetch_add(1, Ordering::Relaxed);
                     }
                 } else {
                     // 30% writes
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                 }
             }
         });
@@ -118,14 +118,14 @@ fn benchmark_sharded_lru(shard_count: usize) -> BenchmarkResult {
                 
                 if rng.gen_bool(0.7) {
                     // 70% reads
-                    if cache_clone.get(&key).is_some() {
+                    if cache_clone.get(&key).unwrap().is_some() {
                         hits_clone.fetch_add(1, Ordering::Relaxed);
                     } else {
                         misses_clone.fetch_add(1, Ordering::Relaxed);
                     }
                 } else {
                     // 30% writes
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                 }
             }
         });
@@ -173,13 +173,13 @@ fn benchmark_lfu() -> BenchmarkResult {
                 let key = rng.gen_range(0..(CACHE_CAPACITY * 2));
                 
                 if rng.gen_bool(0.7) {
-                    if cache_clone.get(&key).is_some() {
+                    if cache_clone.get(&key).unwrap().is_some() {
                         hits_clone.fetch_add(1, Ordering::Relaxed);
                     } else {
                         misses_clone.fetch_add(1, Ordering::Relaxed);
                     }
                 } else {
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                 }
             }
         });
@@ -227,13 +227,13 @@ fn benchmark_fifo() -> BenchmarkResult {
                 let key = rng.gen_range(0..(CACHE_CAPACITY * 2));
                 
                 if rng.gen_bool(0.7) {
-                    if cache_clone.get(&key).is_some() {
+                    if cache_clone.get(&key).unwrap().is_some() {
                         hits_clone.fetch_add(1, Ordering::Relaxed);
                     } else {
                         misses_clone.fetch_add(1, Ordering::Relaxed);
                     }
                 } else {
-                    cache_clone.put(key, format!("value-{key}"));
+                    cache_clone.put(key, format!("value-{key}")).unwrap();
                 }
             }
         });

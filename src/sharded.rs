@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::sync::{Arc, Mutex};
 use std::collections::hash_map::DefaultHasher;
+use crate::CacheError;
 
 #[derive(Clone)]
 struct Node<K, V> {
@@ -46,7 +47,7 @@ impl<K: Clone + Eq + Hash, V: Clone> LruCacheInner<K, V> {
         }
 
         let (prev, next) = {
-            let node = self.nodes[idx].as_ref().unwrap();
+            let node = self.nodes[idx].as_ref().expect("Invalid node index: node should exist");
             (node.prev, node.next)
         };
 
@@ -189,10 +190,10 @@ impl<K: Clone + Eq + Hash, V: Clone> LruCacheInner<K, V> {
 /// // Create cache with 1000 total capacity across 16 shards
 /// let cache = ShardedLruCache::new(1000, 16);
 /// 
-/// cache.put(1, "one");
-/// cache.put(2, "two");
+/// cache.put(1, "one").unwrap();
+/// cache.put(2, "two").unwrap();
 /// 
-/// assert_eq!(cache.get(&1), Some("one"));
+/// assert_eq!(cache.get(&1).unwrap(), Some("one"));
 /// ```
 #[derive(Clone)]
 pub struct ShardedLruCache<K, V> {
@@ -237,34 +238,53 @@ impl<K: Clone + Eq + Hash, V: Clone> ShardedLruCache<K, V> {
     /// Gets a value from the cache
     /// 
     /// If the key exists in its shard, it is marked as recently used and its value is returned.
-    pub fn get(&self, key: &K) -> Option<V> {
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the shard's mutex is poisoned
+    pub fn get(&self, key: &K) -> Result<Option<V>, CacheError> {
         let shard_idx = self.shard_index(key);
-        let mut shard = self.shards[shard_idx].lock().unwrap();
-        shard.get(key)
+        let mut shard = self.shards[shard_idx].lock()?;
+        Ok(shard.get(key))
     }
     
     /// Inserts a key-value pair into the cache
     /// 
     /// The key is hashed to determine which shard it belongs to.
     /// If the shard is at capacity, the least recently used item in that shard is evicted.
-    pub fn put(&self, key: K, value: V) {
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the shard's mutex is poisoned
+    pub fn put(&self, key: K, value: V) -> Result<(), CacheError> {
         let shard_idx = self.shard_index(&key);
-        let mut shard = self.shards[shard_idx].lock().unwrap();
+        let mut shard = self.shards[shard_idx].lock()?;
         shard.put(key, value);
+        Ok(())
     }
     
     /// Returns the approximate number of items in the cache
     /// 
     /// Note: This requires locking all shards, so it's relatively expensive
-    pub fn len(&self) -> usize {
-        self.shards.iter()
-            .map(|shard| shard.lock().unwrap().len())
-            .sum()
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if any shard's mutex is poisoned
+    pub fn len(&self) -> Result<usize, CacheError> {
+        let mut total = 0;
+        for shard in self.shards.iter() {
+            total += shard.lock()?.len();
+        }
+        Ok(total)
     }
     
     /// Returns true if the cache contains no items
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if any shard's mutex is poisoned
+    pub fn is_empty(&self) -> Result<bool, CacheError> {
+        Ok(self.len()? == 0)
     }
     
     /// Returns the number of shards
@@ -273,10 +293,15 @@ impl<K: Clone + Eq + Hash, V: Clone> ShardedLruCache<K, V> {
     }
     
     /// Removes all items from all shards
-    pub fn clear(&self) {
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if any shard's mutex is poisoned
+    pub fn clear(&self) -> Result<(), CacheError> {
         for shard in self.shards.iter() {
-            shard.lock().unwrap().clear();
+            shard.lock()?.clear();
         }
+        Ok(())
     }
 }
 
@@ -297,21 +322,24 @@ impl<K: Clone + Eq + Hash, V: Clone> ShardedLruCache<K, V> {
     /// Get statistics for all shards
     /// 
     /// Useful for analyzing shard distribution and load balancing
-    pub fn shard_stats(&self) -> Vec<ShardStats> {
-        self.shards.iter()
-            .enumerate()
-            .map(|(idx, shard)| {
-                let inner = shard.lock().unwrap();
-                let size = inner.len();
-                let capacity = inner.capacity;
-                ShardStats {
-                    shard_index: idx,
-                    size,
-                    capacity,
-                    utilization: size as f64 / capacity as f64,
-                }
-            })
-            .collect()
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if any shard's mutex is poisoned
+    pub fn shard_stats(&self) -> Result<Vec<ShardStats>, CacheError> {
+        let mut stats = Vec::with_capacity(self.shards.len());
+        for (idx, shard) in self.shards.iter().enumerate() {
+            let inner = shard.lock()?;
+            let size = inner.len();
+            let capacity = inner.capacity;
+            stats.push(ShardStats {
+                shard_index: idx,
+                size,
+                capacity,
+                utilization: size as f64 / capacity as f64,
+            });
+        }
+        Ok(stats)
     }
 }
 

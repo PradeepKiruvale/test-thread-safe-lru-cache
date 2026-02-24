@@ -35,7 +35,7 @@ fn main() {
             for _ in 0..operations_per_thread {
                 let key = rng.gen_range(0..cache_capacity * 2);
                 let value = format!("thread-{thread_id}-value-{key}");
-                cache_clone.put(key, value);
+                cache_clone.put(key, value).unwrap();
                 local_puts += 1;
                 
                 // Occasionally sleep to simulate real work
@@ -60,7 +60,7 @@ fn main() {
             for _ in 0..operations_per_thread {
                 let key = rng.gen_range(0..cache_capacity * 2);
                 
-                if cache_clone.get(&key).is_some() {
+                if cache_clone.get(&key).unwrap().is_some() {
                     hits += 1;
                 } else {
                     misses += 1;
@@ -103,14 +103,14 @@ fn main() {
     println!("    Cache misses: {total_misses}");
     println!("    Hit rate: {:.2}%", 
              (total_hits as f64 / (total_hits + total_misses) as f64) * 100.0);
-    println!("\n  Final cache size: {}", cache.len());
-    println!("  Cache capacity: {}", cache.capacity());
+    println!("\n  Final cache size: {}", cache.len().unwrap());
+    println!("  Cache capacity: {}", cache.capacity().unwrap());
     println!("  Operations per second: {:.0}", 
              (num_threads * operations_per_thread) as f64 / duration.as_secs_f64());
 
     // Verify cache integrity
     println!("\nVerifying cache integrity...");
-    let final_size = cache.len();
+    let final_size = cache.len().unwrap();
     assert!(final_size <= cache_capacity, "Cache exceeded capacity!");
     println!("  ✓ Cache size within capacity");
     println!("  ✓ No deadlocks detected");

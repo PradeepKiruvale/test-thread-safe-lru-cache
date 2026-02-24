@@ -14,9 +14,9 @@ async fn main() {
     
     // Basic operations
     println!("1. Basic async operations:");
-    cache.put(1, "one").await;
-    cache.put(2, "two").await;
-    cache.put(3, "three").await;
+    cache.put(1, "one".to_string()).await;
+    cache.put(2, "two".to_string()).await;
+    cache.put(3, "three".to_string()).await;
     
     println!("   Get key 1: {:?}", cache.get(&1).await);
     println!("   Get key 2: {:?}", cache.get(&2).await);

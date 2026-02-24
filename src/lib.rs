@@ -1,11 +1,35 @@
 // Core synchronous LRU cache implementation
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, PoisonError};
+use std::fmt;
 
 // Public modules
 pub mod eviction;
 pub mod sharded;
+
+/// Error types for cache operations
+#[derive(Debug, Clone)]
+pub enum CacheError {
+    /// The mutex protecting the cache was poisoned
+    LockPoisoned,
+}
+
+impl fmt::Display for CacheError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CacheError::LockPoisoned => write!(f, "Cache lock was poisoned"),
+        }
+    }
+}
+
+impl std::error::Error for CacheError {}
+
+impl<T> From<PoisonError<T>> for CacheError {
+    fn from(_: PoisonError<T>) -> Self {
+        CacheError::LockPoisoned
+    }
+}
 
 // Optional async support (requires tokio feature)
 #[cfg(feature = "async")]
@@ -228,14 +252,14 @@ impl<K: Clone + Eq + Hash, V: Clone> LruCacheInner<K, V> {
 /// 
 /// let cache = LruCache::new(2);
 /// 
-/// cache.put(1, "one");
-/// cache.put(2, "two");
+/// cache.put(1, "one").unwrap();
+/// cache.put(2, "two").unwrap();
 /// 
-/// assert_eq!(cache.get(&1), Some("one"));
+/// assert_eq!(cache.get(&1).unwrap(), Some("one"));
 /// 
 /// // This will evict key 2 (least recently used)
-/// cache.put(3, "three");
-/// assert_eq!(cache.get(&2), None);
+/// cache.put(3, "three").unwrap();
+/// assert_eq!(cache.get(&2).unwrap(), None);
 /// ```
 #[derive(Clone)]
 pub struct LruCache<K, V> {
@@ -262,9 +286,13 @@ impl<K: Clone + Eq + Hash, V: Clone> LruCache<K, V> {
     /// # Time Complexity
     /// 
     /// O(1) average case
-    pub fn get(&self, key: &K) -> Option<V> {
-        let mut inner = self.inner.lock().unwrap();
-        inner.get(key)
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the mutex is poisoned
+    pub fn get(&self, key: &K) -> Result<Option<V>, CacheError> {
+        let mut inner = self.inner.lock()?;
+        Ok(inner.get(key))
     }
 
     /// Inserts a key-value pair into the cache
@@ -275,33 +303,55 @@ impl<K: Clone + Eq + Hash, V: Clone> LruCache<K, V> {
     /// # Time Complexity
     /// 
     /// O(1) average case
-    pub fn put(&self, key: K, value: V) {
-        let mut inner = self.inner.lock().unwrap();
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the mutex is poisoned
+    pub fn put(&self, key: K, value: V) -> Result<(), CacheError> {
+        let mut inner = self.inner.lock()?;
         inner.put(key, value);
+        Ok(())
     }
 
     /// Returns the number of items currently in the cache
-    pub fn len(&self) -> usize {
-        let inner = self.inner.lock().unwrap();
-        inner.len()
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the mutex is poisoned
+    pub fn len(&self) -> Result<usize, CacheError> {
+        let inner = self.inner.lock()?;
+        Ok(inner.len())
     }
 
     /// Returns true if the cache contains no items
-    pub fn is_empty(&self) -> bool {
-        let inner = self.inner.lock().unwrap();
-        inner.is_empty()
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the mutex is poisoned
+    pub fn is_empty(&self) -> Result<bool, CacheError> {
+        let inner = self.inner.lock()?;
+        Ok(inner.is_empty())
     }
 
     /// Returns the maximum capacity of the cache
-    pub fn capacity(&self) -> usize {
-        let inner = self.inner.lock().unwrap();
-        inner.capacity()
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the mutex is poisoned
+    pub fn capacity(&self) -> Result<usize, CacheError> {
+        let inner = self.inner.lock()?;
+        Ok(inner.capacity())
     }
 
     /// Removes all items from the cache
-    pub fn clear(&self) {
-        let mut inner = self.inner.lock().unwrap();
+    /// 
+    /// # Errors
+    /// 
+    /// Returns `CacheError::LockPoisoned` if the mutex is poisoned
+    pub fn clear(&self) -> Result<(), CacheError> {
+        let mut inner = self.inner.lock()?;
         inner.clear();
+        Ok(())
     }
 }
 

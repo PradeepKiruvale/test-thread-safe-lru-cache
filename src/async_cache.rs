@@ -45,7 +45,7 @@ impl<K: Clone + Eq + Hash, V: Clone> AsyncLruCacheInner<K, V> {
         }
 
         let (prev, next) = {
-            let node = self.nodes[idx].as_ref().unwrap();
+            let node = self.nodes[idx].as_ref().expect("Invalid node index: node should exist");
             (node.prev, node.next)
         };
 
