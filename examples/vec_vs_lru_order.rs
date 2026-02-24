@@ -38,14 +38,14 @@ impl SimpleLruCache {
                              idx, node.key, node.value, node.prev, node.next);
                 }
                 None => {
-                    println!("  Index {}: (empty/freed)", idx);
+                    println!("  Index {idx}: (empty/freed)");
                 }
             }
         }
         
         println!("\nHashMap (Key → Vec Index):");
         for (key, idx) in &self.map {
-            println!("  '{}'  → {}", key, idx);
+            println!("  '{key}'  → {idx}");
         }
         
         println!("\nLRU Order (following prev/next chain):");

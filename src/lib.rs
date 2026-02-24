@@ -1,6 +1,20 @@
+// Core synchronous LRU cache implementation
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
+
+// Public modules
+pub mod eviction;
+pub mod sharded;
+
+// Optional async support (requires tokio feature)
+#[cfg(feature = "async")]
+pub mod async_cache;
+
+#[cfg(feature = "async")]
+pub use async_cache::AsyncLruCache;
+
+pub use sharded::ShardedLruCache;
 
 /// A node in the doubly-linked list that tracks access order
 struct Node<K, V> {
@@ -377,7 +391,7 @@ mod tests {
             let cache_clone = cache.clone();
             let handle = thread::spawn(move || {
                 for j in 0..100 {
-                    cache_clone.put(i * 100 + j, format!("value-{}-{}", i, j));
+                    cache_clone.put(i * 100 + j, format!("value-{i}-{j}"));
                 }
             });
             handles.push(handle);

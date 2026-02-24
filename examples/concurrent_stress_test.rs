@@ -12,9 +12,9 @@ fn main() {
     let operations_per_thread = 10_000;
 
     println!("Configuration:");
-    println!("  Cache capacity: {}", cache_capacity);
-    println!("  Concurrent threads: {}", num_threads);
-    println!("  Operations per thread: {}", operations_per_thread);
+    println!("  Cache capacity: {cache_capacity}");
+    println!("  Concurrent threads: {num_threads}");
+    println!("  Operations per thread: {operations_per_thread}");
     println!("  Total operations: {}\n", num_threads * operations_per_thread);
 
     let cache = Arc::new(LruCache::new(cache_capacity));
@@ -34,7 +34,7 @@ fn main() {
             
             for _ in 0..operations_per_thread {
                 let key = rng.gen_range(0..cache_capacity * 2);
-                let value = format!("thread-{}-value-{}", thread_id, key);
+                let value = format!("thread-{thread_id}-value-{key}");
                 cache_clone.put(key, value);
                 local_puts += 1;
                 
@@ -95,12 +95,12 @@ fn main() {
 
     let duration = start.elapsed();
 
-    println!("\nTest completed in {:?}", duration);
+    println!("\nTest completed in {duration:?}");
     println!("\nResults:");
-    println!("  Total PUT operations: {}", total_puts);
+    println!("  Total PUT operations: {total_puts}");
     println!("  Total GET operations: {}", total_hits + total_misses);
-    println!("    Cache hits: {}", total_hits);
-    println!("    Cache misses: {}", total_misses);
+    println!("    Cache hits: {total_hits}");
+    println!("    Cache misses: {total_misses}");
     println!("    Hit rate: {:.2}%", 
              (total_hits as f64 / (total_hits + total_misses) as f64) * 100.0);
     println!("\n  Final cache size: {}", cache.len());

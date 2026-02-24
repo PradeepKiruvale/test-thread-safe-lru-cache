@@ -1,12 +1,19 @@
 [package]
 name = "lru_cache"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
+# Async support (optional)
+tokio = { version = "1.35", features = ["sync", "rt", "macros"], optional = true }
 
 [dev-dependencies]
 rand = "0.8"
+tokio = { version = "1.35", features = ["full"] }
+
+[features]
+default = []
+async = ["tokio"]
 
 [[example]]
 name = "basic_usage"
@@ -15,3 +22,21 @@ path = "examples/basic_usage.rs"
 [[example]]
 name = "concurrent_stress_test"
 path = "examples/concurrent_stress_test.rs"
+
+[[example]]
+name = "async_cache_example"
+path = "examples/async_cache_example.rs"
+required-features = ["async"]
+
+[[example]]
+name = "eviction_policies_example"
+path = "examples/eviction_policies_example.rs"
+
+[[example]]
+name = "sharded_cache_example"
+path = "examples/sharded_cache_example.rs"
+
+[[example]]
+name = "performance_comparison"
+path = "examples/performance_comparison.rs"
+

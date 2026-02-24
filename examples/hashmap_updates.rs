@@ -29,7 +29,7 @@ impl LruCache {
     
     fn display_state(&self, operation: &str) {
         println!("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        println!("After: {}", operation);
+        println!("After: {operation}");
         println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         
         println!("\n📋 HashMap (Key → Vec Index):");
@@ -39,7 +39,7 @@ impl LruCache {
             let mut entries: Vec<_> = self.map.iter().collect();
             entries.sort_by_key(|(k, _)| k.to_string());
             for (key, idx) in entries {
-                println!("   '{}' → {}", key, idx);
+                println!("   '{key}' → {idx}");
             }
         }
         
@@ -51,7 +51,7 @@ impl LruCache {
                              idx, node.key, node.value, node.prev, node.next);
                 }
                 None => {
-                    println!("   [{}] (freed)", idx);
+                    println!("   [{idx}] (freed)");
                 }
             }
         }
@@ -73,33 +73,33 @@ impl LruCache {
     
     fn put(&mut self, key: String, value: i32) {
         println!("\n\n╔════════════════════════════════════════════════════╗");
-        println!("║  PUT('{}', {})                                    ", key, value);
+        println!("║  PUT('{key}', {value})                                    ");
         println!("╚════════════════════════════════════════════════════╝");
         
         // Check if key already exists in HashMap
         if let Some(&idx) = self.map.get(&key) {
-            println!("\n✓ Key '{}' found in HashMap at index {}", key, idx);
-            println!("  → HashMap entry UNCHANGED: '{}' → {}", key, idx);
-            println!("  → Only updating the value in nodes[{}]", idx);
+            println!("\n✓ Key '{key}' found in HashMap at index {idx}");
+            println!("  → HashMap entry UNCHANGED: '{key}' → {idx}");
+            println!("  → Only updating the value in nodes[{idx}]");
             
             if let Some(ref mut node) = self.nodes[idx] {
                 println!("    Before: nodes[{}].value = {}", idx, node.value);
                 node.value = value;
-                println!("    After:  nodes[{}].value = {}", idx, value);
+                println!("    After:  nodes[{idx}].value = {value}");
             }
             
             println!("\n  → Moving node to front (updating prev/next pointers)");
             self.move_to_front(idx);
             
-            self.display_state(&format!("PUT('{}', {}) - UPDATED EXISTING", key, value));
+            self.display_state(&format!("PUT('{key}', {value}) - UPDATED EXISTING"));
             return;
         }
         
         // Key doesn't exist - insert new entry
-        println!("\n✗ Key '{}' NOT in HashMap - inserting new", key);
+        println!("\n✗ Key '{key}' NOT in HashMap - inserting new");
         
         let idx = self.nodes.len();
-        println!("  → New node will be at Vec index {}", idx);
+        println!("  → New node will be at Vec index {idx}");
         
         let new_node = Node {
             key: key.clone(),
@@ -116,9 +116,9 @@ impl LruCache {
         
         self.nodes.push(Some(new_node));
         
-        println!("  → Inserting into HashMap: '{}' → {}", key, idx);
+        println!("  → Inserting into HashMap: '{key}' → {idx}");
         self.map.insert(key.clone(), idx);
-        println!("    HashMap.insert('{}', {})", key, idx);
+        println!("    HashMap.insert('{key}', {idx})");
         println!("    HashMap size is now: {}", self.map.len());
         
         self.head = Some(idx);
@@ -127,33 +127,33 @@ impl LruCache {
             self.tail = Some(idx);
         }
         
-        self.display_state(&format!("PUT('{}', {}) - NEW ENTRY", key, value));
+        self.display_state(&format!("PUT('{key}', {value}) - NEW ENTRY"));
     }
     
     fn get(&mut self, key: &str) -> Option<i32> {
         println!("\n\n╔════════════════════════════════════════════════════╗");
-        println!("║  GET('{}')                                        ", key);
+        println!("║  GET('{key}')                                        ");
         println!("╚════════════════════════════════════════════════════╝");
         
         if let Some(&idx) = self.map.get(key) {
-            println!("\n✓ Key '{}' found in HashMap at index {}", key, idx);
-            println!("  → HashMap entry UNCHANGED: '{}' → {}", key, idx);
-            println!("  → Retrieved nodes[{}].value", idx);
+            println!("\n✓ Key '{key}' found in HashMap at index {idx}");
+            println!("  → HashMap entry UNCHANGED: '{key}' → {idx}");
+            println!("  → Retrieved nodes[{idx}].value");
             
             let value = self.nodes[idx].as_ref().map(|n| n.value);
             
             println!("  → Moving node to front (updating prev/next pointers only)");
             self.move_to_front(idx);
             
-            self.display_state(&format!("GET('{}') - FOUND", key));
+            self.display_state(&format!("GET('{key}') - FOUND"));
             return value;
         }
         
-        println!("\n✗ Key '{}' NOT in HashMap", key);
+        println!("\n✗ Key '{key}' NOT in HashMap");
         println!("  → HashMap UNCHANGED");
         println!("  → Returning None");
         
-        self.display_state(&format!("GET('{}') - NOT FOUND", key));
+        self.display_state(&format!("GET('{key}') - NOT FOUND"));
         None
     }
     
@@ -208,14 +208,14 @@ impl LruCache {
             if let Some(tail_node) = self.nodes[tail_idx].as_ref() {
                 let key = tail_node.key.clone();
                 
-                println!("\n→ Evicting least recently used: '{}' at index {}", key, tail_idx);
-                println!("  → Removing from HashMap: '{}' → {}", key, tail_idx);
+                println!("\n→ Evicting least recently used: '{key}' at index {tail_idx}");
+                println!("  → Removing from HashMap: '{key}' → {tail_idx}");
                 
                 self.map.remove(&key);
-                println!("    HashMap.remove('{}')", key);
+                println!("    HashMap.remove('{key}')");
                 println!("    HashMap size is now: {}", self.map.len());
                 
-                println!("  → Setting nodes[{}] = None (freeing slot)", tail_idx);
+                println!("  → Setting nodes[{tail_idx}] = None (freeing slot)");
             }
             
             self.tail = self.nodes[tail_idx].as_ref().and_then(|n| n.prev);

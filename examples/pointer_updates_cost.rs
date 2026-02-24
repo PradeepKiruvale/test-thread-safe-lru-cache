@@ -40,7 +40,7 @@ impl LruCache {
             return;
         }
         
-        println!("  Moving index {} to front:", idx);
+        println!("  Moving index {idx} to front:");
         self.operation_count = 0;
         
         // Extract indices
@@ -54,7 +54,7 @@ impl LruCache {
         if let Some(prev_idx) = prev_idx {
             if let Some(ref mut prev_node) = self.nodes[prev_idx] {
                 prev_node.next = next_idx;
-                self.count_operation(&format!("Node[{}].next = {:?}", prev_idx, next_idx));
+                self.count_operation(&format!("Node[{prev_idx}].next = {next_idx:?}"));
             }
         }
         
@@ -62,18 +62,18 @@ impl LruCache {
         if let Some(next_idx) = next_idx {
             if let Some(ref mut next_node) = self.nodes[next_idx] {
                 next_node.prev = prev_idx;
-                self.count_operation(&format!("Node[{}].prev = {:?}", next_idx, prev_idx));
+                self.count_operation(&format!("Node[{next_idx}].prev = {prev_idx:?}"));
             }
         } else {
             self.tail = prev_idx;
-            self.count_operation(&format!("tail = {:?}", prev_idx));
+            self.count_operation(&format!("tail = {prev_idx:?}"));
         }
         
         // Update current node
         if let Some(ref mut node) = self.nodes[idx] {
             node.prev = None;
             node.next = self.head;
-            self.count_operation(&format!("Node[{}].prev = None", idx));
+            self.count_operation(&format!("Node[{idx}].prev = None"));
             self.count_operation(&format!("Node[{}].next = {:?}", idx, self.head));
         }
         
@@ -81,18 +81,18 @@ impl LruCache {
         if let Some(old_head_idx) = self.head {
             if let Some(ref mut old_head) = self.nodes[old_head_idx] {
                 old_head.prev = Some(idx);
-                self.count_operation(&format!("Node[{}].prev = Some({})", old_head_idx, idx));
+                self.count_operation(&format!("Node[{old_head_idx}].prev = Some({idx})"));
             }
         }
         
         self.head = Some(idx);
-        self.count_operation(&format!("head = Some({})", idx));
+        self.count_operation(&format!("head = Some({idx})"));
         
         println!("  ✓ Total pointer updates: {}", self.operation_count);
     }
     
     fn put_simple(&mut self, key: String, value: i32) {
-        println!("\n=== PUT('{}', {}) ===", key, value);
+        println!("\n=== PUT('{key}', {value}) ===");
         self.operation_count = 0;
         
         if let Some(&idx) = self.map.get(&key) {
@@ -115,33 +115,33 @@ impl LruCache {
             next: self.head,
         };
         
-        self.count_operation(&format!("Create new node at index {}", idx));
+        self.count_operation(&format!("Create new node at index {idx}"));
         
         if let Some(old_head_idx) = self.head {
             if let Some(ref mut old_head) = self.nodes[old_head_idx] {
                 old_head.prev = Some(idx);
-                self.count_operation(&format!("Node[{}].prev = Some({})", old_head_idx, idx));
+                self.count_operation(&format!("Node[{old_head_idx}].prev = Some({idx})"));
             }
         }
         
         self.nodes.push(Some(new_node));
         self.map.insert(key, idx);
         self.head = Some(idx);
-        self.count_operation(&format!("head = Some({})", idx));
+        self.count_operation(&format!("head = Some({idx})"));
         
         if self.tail.is_none() {
             self.tail = Some(idx);
-            self.count_operation(&format!("tail = Some({})", idx));
+            self.count_operation(&format!("tail = Some({idx})"));
         }
         
         println!("  ✓ Total operations: {}", self.operation_count);
     }
     
     fn get(&mut self, key: &str) {
-        println!("\n=== GET('{}') ===", key);
+        println!("\n=== GET('{key}') ===");
         
         if let Some(&idx) = self.map.get(key) {
-            println!("  Found at index {}", idx);
+            println!("  Found at index {idx}");
             self.move_to_front(idx);
         } else {
             println!("  Not found");
