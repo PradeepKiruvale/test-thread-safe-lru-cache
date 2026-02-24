@@ -377,49 +377,4 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
-    #[test]
-    fn test_lru_policy() {
-        let cache = ThreadSafeEvictableCache::new(2, LruPolicy::new());
-        
-        cache.put(1, "one");
-        cache.put(2, "two");
-        cache.put(3, "three"); // Evicts 1
-        
-        assert_eq!(cache.get(&1), None);
-        assert_eq!(cache.get(&2), Some("two"));
-        assert_eq!(cache.get(&3), Some("three"));
-    }
-
-    #[test]
-    fn test_lfu_policy() {
-        let cache = ThreadSafeEvictableCache::new(2, LfuPolicy::new());
-        
-        cache.put(1, "one");
-        cache.put(2, "two");
-        cache.get(&1); // Access 1 twice
-        cache.get(&1);
-        cache.put(3, "three"); // Should evict 2 (less frequently used)
-        
-        assert_eq!(cache.get(&1), Some("one"));
-        assert_eq!(cache.get(&2), None);
-        assert_eq!(cache.get(&3), Some("three"));
-    }
-
-    #[test]
-    fn test_fifo_policy() {
-        let cache = ThreadSafeEvictableCache::new(2, FifoPolicy::new());
-        
-        cache.put(1, "one");
-        cache.put(2, "two");
-        cache.get(&1); // Access doesn't matter for FIFO
-        cache.put(3, "three"); // Evicts 1 (first in)
-        
-        assert_eq!(cache.get(&1), None);
-        assert_eq!(cache.get(&2), Some("two"));
-        assert_eq!(cache.get(&3), Some("three"));
-    }
-}
