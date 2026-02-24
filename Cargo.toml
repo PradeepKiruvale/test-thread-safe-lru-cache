@@ -1,0 +1,17 @@
+[package]
+name = "lru_cache"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+rand = "0.8"
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "concurrent_stress_test"
+path = "examples/concurrent_stress_test.rs"
